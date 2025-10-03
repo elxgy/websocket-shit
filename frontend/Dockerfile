@@ -25,14 +25,10 @@ COPY --from=builder /app/build /usr/share/nginx/html
 COPY nginx.conf /etc/nginx/conf.d/default.conf.template
 
 # Create startup script to handle PORT env var
-RUN echo '#!/bin/sh' > /docker-entrypoint.sh && \
-    echo 'PORT=${PORT:-80}' >> /docker-entrypoint.sh && \
-    echo 'sed "s/listen 80;/listen $PORT;/g" /etc/nginx/conf.d/default.conf.template > /etc/nginx/conf.d/default.conf' >> /docker-entrypoint.sh && \
-    echo 'exec nginx -g "daemon off;"' >> /docker-entrypoint.sh && \
-    chmod +x /docker-entrypoint.sh
+RUN echo '#!/bin/sh' > /start.sh && \
+    echo 'PORT=${PORT:-80}' >> /start.sh && \
+    echo 'sed "s/listen 80;/listen $PORT;/g" /etc/nginx/conf.d/default.conf.template > /etc/nginx/conf.d/default.conf' >> /start.sh && \
+    echo 'nginx -g "daemon off;"' >> /start.sh && \
+    chmod +x /start.sh
 
-# Expose port (Railway will override this)
-EXPOSE $PORT
-
-# Start with our custom script
-CMD ["/docker-entrypoint.sh"]
+ENTRYPOINT ["/start.sh"]
