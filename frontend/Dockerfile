@@ -2,33 +2,26 @@
 FROM node:18-alpine AS builder
 
 WORKDIR /app
-
-# Copy package files
 COPY package*.json ./
-
-# Install dependencies
-RUN npm ci
-
-# Copy source code
+RUN npm ci --only=production
 COPY . .
-
-# Build the application
 RUN npm run build
 
 # Production stage
 FROM nginx:alpine
 
-# Copy built application
+# Copy the build output to replace the default nginx contents
 COPY --from=builder /app/build /usr/share/nginx/html
 
-# Copy nginx configuration template
-COPY nginx.conf /etc/nginx/conf.d/default.conf.template
+# Create a simple startup script
+RUN echo 'server {' > /etc/nginx/conf.d/default.conf && \
+    echo '    listen $PORT;' >> /etc/nginx/conf.d/default.conf && \
+    echo '    location / {' >> /etc/nginx/conf.d/default.conf && \
+    echo '        root /usr/share/nginx/html;' >> /etc/nginx/conf.d/default.conf && \
+    echo '        index index.html index.htm;' >> /etc/nginx/conf.d/default.conf && \
+    echo '        try_files $uri $uri/ /index.html;' >> /etc/nginx/conf.d/default.conf && \
+    echo '    }' >> /etc/nginx/conf.d/default.conf && \
+    echo '}' >> /etc/nginx/conf.d/default.conf
 
-# Create startup script to handle PORT env var
-RUN echo '#!/bin/sh' > /start.sh && \
-    echo 'PORT=${PORT:-80}' >> /start.sh && \
-    echo 'sed "s/listen 80;/listen $PORT;/g" /etc/nginx/conf.d/default.conf.template > /etc/nginx/conf.d/default.conf' >> /start.sh && \
-    echo 'nginx -g "daemon off;"' >> /start.sh && \
-    chmod +x /start.sh
-
-ENTRYPOINT ["/start.sh"]
+# Use envsubst to replace $PORT at runtime and start nginx
+CMD /bin/sh -c "envsubst '\$PORT' < /etc/nginx/conf.d/default.conf > /etc/nginx/conf.d/default.conf && nginx -g 'daemon off;'"
