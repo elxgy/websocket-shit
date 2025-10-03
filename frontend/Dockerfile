@@ -2,26 +2,36 @@
 FROM node:18-alpine AS builder
 
 WORKDIR /app
+
+# Copy package files
 COPY package*.json ./
-RUN npm ci --only=production
+
+# Install dependencies
+RUN npm ci
+
+# Copy source code
 COPY . .
+
+# Build the application
 RUN npm run build
 
 # Production stage
-FROM nginx:alpine
+FROM node:18-alpine
 
-# Copy the build output to replace the default nginx contents
-COPY --from=builder /app/build /usr/share/nginx/html
+WORKDIR /app
 
-# Create a simple startup script
-RUN echo 'server {' > /etc/nginx/conf.d/default.conf && \
-    echo '    listen $PORT;' >> /etc/nginx/conf.d/default.conf && \
-    echo '    location / {' >> /etc/nginx/conf.d/default.conf && \
-    echo '        root /usr/share/nginx/html;' >> /etc/nginx/conf.d/default.conf && \
-    echo '        index index.html index.htm;' >> /etc/nginx/conf.d/default.conf && \
-    echo '        try_files $uri $uri/ /index.html;' >> /etc/nginx/conf.d/default.conf && \
-    echo '    }' >> /etc/nginx/conf.d/default.conf && \
-    echo '}' >> /etc/nginx/conf.d/default.conf
+# Copy package.json and install production dependencies
+COPY package*.json ./
+RUN npm ci --only=production
 
-# Use envsubst to replace $PORT at runtime and start nginx
-CMD /bin/sh -c "envsubst '\$PORT' < /etc/nginx/conf.d/default.conf > /etc/nginx/conf.d/default.conf && nginx -g 'daemon off;'"
+# Copy built application from builder stage
+COPY --from=builder /app/build ./build
+
+# Copy server file
+COPY server.js ./
+
+# Expose port (Railway will set PORT env variable)
+EXPOSE 3000
+
+# Start the server
+CMD ["node", "server.js"]
