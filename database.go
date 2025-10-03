@@ -127,10 +127,13 @@ func (d *Database) CreateDefaultUsers() error {
 		username string
 		password string
 	}{
-		{"alice", "password123"},
-		{"bob", "password123"},
-		{"charlie", "password123"},
-		{"diana", "password123"},
+		{"yuri", "yuricbtt"},
+		{"bernardo", "yuricbtt"},
+		{"pedro", "yuricbtt"},
+		{"marcelo", "yuricbtt"},
+		{"giggio", "giggio123"},
+		{"ramos", "ramosgay"},
+		{"markin", "markinviado"},
 	}
 
 	for _, user := range defaultUsers {

@@ -14,10 +14,13 @@ const config = {
   MESSAGE_HISTORY_LIMIT: 100,
   
   TEST_USERS: [
-    { username: 'alice', password: 'password123' },
-    { username: 'bob', password: 'password123' },
-    { username: 'charlie', password: 'password123' },
-    { username: 'diana', password: 'password123' }
+    { username: 'yuri', password: 'yuricbtt' },
+    { username: 'bernardo', password: 'yuricbtt' },
+    { username: 'pedro', password: 'yuricbtt' },
+    { username: 'marcelo', password: 'yuricbtt' },
+    { username: 'giggio', password: 'giggio123' },
+    { username: 'ramos', password: 'ramosgay' },
+    { username: 'markin', password: 'markinviado' }
   ]
 };
 
