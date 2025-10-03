@@ -1,7 +1,8 @@
 version: '3.8'
 
 services:
-  chat-server:
+  # Backend API Server
+  backend:
     build: .
     ports:
       - "8080:8080"
@@ -9,37 +10,34 @@ services:
       - MONGODB_URI=${MONGODB_URI}
       - PORT=8080
     restart: unless-stopped
+    networks:
+      - chat-network
+
+  # Frontend React App  
+  frontend:
+    build: ./frontend
+    ports:
+      - "3000:3000"
     depends_on:
-      - mongo
+      - backend
+    restart: unless-stopped
     networks:
       - chat-network
 
   # Optional: Local MongoDB for development
-  mongo:
-    image: mongo:7.0
-    container_name: chat-mongo
-    ports:
-      - "27017:27017"
-    environment:
-      - MONGO_INITDB_ROOT_USERNAME=admin
-      - MONGO_INITDB_ROOT_PASSWORD=password
-    volumes:
-      - mongo_data:/data/db
-    networks:
-      - chat-network
-
-  # Optional: Frontend container (if you have a separate frontend app)
-  frontend:
-    image: nginx:alpine
-    container_name: chat-frontend
-    ports:
-      - "3000:80"
-    volumes:
-      - ./example-frontend:/usr/share/nginx/html
-    depends_on:
-      - chat-server
-    networks:
-      - chat-network
+  # Uncomment if you want to use local MongoDB instead of Atlas
+  # mongo:
+  #   image: mongo:7.0
+  #   container_name: chat-mongo
+  #   ports:
+  #     - "27017:27017"
+  #   environment:
+  #     - MONGO_INITDB_ROOT_USERNAME=admin
+  #     - MONGO_INITDB_ROOT_PASSWORD=password123
+  #   volumes:
+  #     - mongo_data:/data/db
+  #   networks:
+  #     - chat-network
 
 volumes:
   mongo_data:

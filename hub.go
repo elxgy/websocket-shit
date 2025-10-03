@@ -35,11 +35,10 @@ func (h *Hub) run() {
 				client.conn.Close()
 				continue
 			}
-			
+
 			h.clients[client] = true
 			log.Printf("Client %s connected. Total clients: %d", client.username, len(h.clients))
-			
-			// Send recent messages to the new client
+
 			if h.db != nil {
 				messages, err := h.db.GetRecentMessages()
 				if err != nil {
@@ -67,8 +66,7 @@ func (h *Hub) run() {
 					}
 				}
 			}
-			
-			// Broadcast user joined message
+
 			joinMessage := ChatMessage{
 				Type:     "user_joined",
 				Username: client.username,
@@ -76,14 +74,13 @@ func (h *Hub) run() {
 			}
 			messageBytes, _ := json.Marshal(joinMessage)
 			h.broadcastToOthers(client, messageBytes)
-			
+
 		case client := <-h.unregister:
 			if _, ok := h.clients[client]; ok {
 				delete(h.clients, client)
 				close(client.send)
 				log.Printf("Client %s disconnected. Total clients: %d", client.username, len(h.clients))
-				
-				// Broadcast user left message
+
 				leaveMessage := ChatMessage{
 					Type:     "user_left",
 					Username: client.username,
@@ -92,7 +89,7 @@ func (h *Hub) run() {
 				messageBytes, _ := json.Marshal(leaveMessage)
 				h.broadcastToAll(messageBytes)
 			}
-			
+
 		case message := <-h.broadcast:
 			h.broadcastToAll(message)
 		}

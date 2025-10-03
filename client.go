@@ -20,45 +20,48 @@ func (c *Client) read() {
 		c.hub.unregister <- c
 		c.conn.Close()
 	}()
-	
+
 	c.conn.SetReadLimit(512)
 	c.conn.SetReadDeadline(time.Now().Add(60 * time.Second))
 	c.conn.SetPongHandler(func(string) error {
 		c.conn.SetReadDeadline(time.Now().Add(60 * time.Second))
 		return nil
 	})
-	
+
 	for {
 		_, messageBytes, err := c.conn.ReadMessage()
 		if err != nil {
 			if websocket.IsUnexpectedCloseError(err, websocket.CloseGoingAway, websocket.CloseAbnormalClosure) {
-				log.Printf("websocket closed due to an error: %v", err)
+				log.Printf("WebSocket connection closed unexpectedly for %s: %v", c.username, err)
+			} else {
+				log.Printf("WebSocket connection closed normally for %s", c.username)
 			}
 			break
 		}
 
 		var chatMessage ChatMessage
 		if err := json.Unmarshal(messageBytes, &chatMessage); err != nil {
-			log.Printf("error unmarshaling message: %v", err)
+			log.Printf("Error unmarshaling message from %s: %v", c.username, err)
 			continue
 		}
 
-		// Set the username and timestamp
 		chatMessage.Username = c.username
 		chatMessage.Timestamp = time.Now()
 
-		// Save message to database
+		log.Printf("Message received from %s: %s", c.username, chatMessage.Content)
+
 		if c.hub.db != nil {
 			err = c.hub.db.SaveMessage(chatMessage.Username, chatMessage.Content)
 			if err != nil {
-				log.Printf("error saving message to database: %v", err)
+				log.Printf("Error saving message to database from %s: %v", c.username, err)
+			} else {
+				log.Printf("Message saved to database from %s", c.username)
 			}
 		}
 
-		// Broadcast the message
 		messageBytes, err = json.Marshal(chatMessage)
 		if err != nil {
-			log.Printf("error marshaling message: %v", err)
+			log.Printf("Error marshaling message from %s: %v", c.username, err)
 			continue
 		}
 
@@ -72,7 +75,7 @@ func (c *Client) write() {
 		ticker.Stop()
 		c.conn.Close()
 	}()
-	
+
 	for {
 		select {
 		case message, ok := <-c.send:

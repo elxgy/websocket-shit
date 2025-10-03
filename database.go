@@ -27,7 +27,6 @@ func NewDatabase(uri string) (*Database, error) {
 		return nil, err
 	}
 
-	// Test the connection
 	err = client.Ping(ctx, nil)
 	if err != nil {
 		return nil, err
@@ -48,7 +47,6 @@ func (d *Database) Close() {
 	d.client.Disconnect(ctx)
 }
 
-// CreateUser creates a new user with hashed password
 func (d *Database) CreateUser(username, password string) error {
 	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
 	if err != nil {
@@ -67,7 +65,6 @@ func (d *Database) CreateUser(username, password string) error {
 	return err
 }
 
-// AuthenticateUser verifies user credentials
 func (d *Database) AuthenticateUser(username, password string) (*User, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
@@ -86,7 +83,6 @@ func (d *Database) AuthenticateUser(username, password string) (*User, error) {
 	return &user, nil
 }
 
-// SaveMessage saves a chat message to the database
 func (d *Database) SaveMessage(username, content string) error {
 	message := Message{
 		Username:  username,
@@ -101,7 +97,6 @@ func (d *Database) SaveMessage(username, content string) error {
 	return err
 }
 
-// GetRecentMessages retrieves the last 50 messages
 func (d *Database) GetRecentMessages() ([]Message, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
@@ -119,7 +114,6 @@ func (d *Database) GetRecentMessages() ([]Message, error) {
 		return nil, err
 	}
 
-	// Reverse the order to show oldest first
 	for i := len(messages)/2 - 1; i >= 0; i-- {
 		opp := len(messages) - 1 - i
 		messages[i], messages[opp] = messages[opp], messages[i]
@@ -128,7 +122,6 @@ func (d *Database) GetRecentMessages() ([]Message, error) {
 	return messages, nil
 }
 
-// CreateDefaultUsers creates 4 default users for testing
 func (d *Database) CreateDefaultUsers() error {
 	defaultUsers := []struct {
 		username string
@@ -141,14 +134,12 @@ func (d *Database) CreateDefaultUsers() error {
 	}
 
 	for _, user := range defaultUsers {
-		// Check if user already exists
 		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 		var existingUser User
 		err := d.users.FindOne(ctx, bson.M{"username": user.username}).Decode(&existingUser)
 		cancel()
 
 		if err == mongo.ErrNoDocuments {
-			// User doesn't exist, create them
 			err = d.CreateUser(user.username, user.password)
 			if err != nil {
 				log.Printf("Error creating default user %s: %v", user.username, err)
