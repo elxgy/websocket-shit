@@ -1,0 +1,162 @@
+package main
+
+import (
+	"context"
+	"log"
+	"time"
+
+	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/mongo"
+	"go.mongodb.org/mongo-driver/mongo/options"
+	"golang.org/x/crypto/bcrypt"
+)
+
+type Database struct {
+	client   *mongo.Client
+	db       *mongo.Database
+	users    *mongo.Collection
+	messages *mongo.Collection
+}
+
+func NewDatabase(uri string) (*Database, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
+	client, err := mongo.Connect(ctx, options.Client().ApplyURI(uri))
+	if err != nil {
+		return nil, err
+	}
+
+	// Test the connection
+	err = client.Ping(ctx, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	db := client.Database("chatapp")
+	return &Database{
+		client:   client,
+		db:       db,
+		users:    db.Collection("users"),
+		messages: db.Collection("messages"),
+	}, nil
+}
+
+func (d *Database) Close() {
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+	d.client.Disconnect(ctx)
+}
+
+// CreateUser creates a new user with hashed password
+func (d *Database) CreateUser(username, password string) error {
+	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
+	if err != nil {
+		return err
+	}
+
+	user := User{
+		Username: username,
+		Password: string(hashedPassword),
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	_, err = d.users.InsertOne(ctx, user)
+	return err
+}
+
+// AuthenticateUser verifies user credentials
+func (d *Database) AuthenticateUser(username, password string) (*User, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	var user User
+	err := d.users.FindOne(ctx, bson.M{"username": username}).Decode(&user)
+	if err != nil {
+		return nil, err
+	}
+
+	err = bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(password))
+	if err != nil {
+		return nil, err
+	}
+
+	return &user, nil
+}
+
+// SaveMessage saves a chat message to the database
+func (d *Database) SaveMessage(username, content string) error {
+	message := Message{
+		Username:  username,
+		Content:   content,
+		Timestamp: time.Now(),
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	_, err := d.messages.InsertOne(ctx, message)
+	return err
+}
+
+// GetRecentMessages retrieves the last 50 messages
+func (d *Database) GetRecentMessages() ([]Message, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	opts := options.Find().SetSort(bson.D{{"timestamp", -1}}).SetLimit(50)
+	cursor, err := d.messages.Find(ctx, bson.M{}, opts)
+	if err != nil {
+		return nil, err
+	}
+	defer cursor.Close(ctx)
+
+	var messages []Message
+	err = cursor.All(ctx, &messages)
+	if err != nil {
+		return nil, err
+	}
+
+	// Reverse the order to show oldest first
+	for i := len(messages)/2 - 1; i >= 0; i-- {
+		opp := len(messages) - 1 - i
+		messages[i], messages[opp] = messages[opp], messages[i]
+	}
+
+	return messages, nil
+}
+
+// CreateDefaultUsers creates 4 default users for testing
+func (d *Database) CreateDefaultUsers() error {
+	defaultUsers := []struct {
+		username string
+		password string
+	}{
+		{"alice", "password123"},
+		{"bob", "password123"},
+		{"charlie", "password123"},
+		{"diana", "password123"},
+	}
+
+	for _, user := range defaultUsers {
+		// Check if user already exists
+		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+		var existingUser User
+		err := d.users.FindOne(ctx, bson.M{"username": user.username}).Decode(&existingUser)
+		cancel()
+
+		if err == mongo.ErrNoDocuments {
+			// User doesn't exist, create them
+			err = d.CreateUser(user.username, user.password)
+			if err != nil {
+				log.Printf("Error creating default user %s: %v", user.username, err)
+			} else {
+				log.Printf("Created default user: %s", user.username)
+			}
+		}
+	}
+
+	return nil
+}

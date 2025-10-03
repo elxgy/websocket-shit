@@ -1,0 +1,9 @@
+# Railway ignore file
+*.md
+.git
+.gitignore
+example-frontend/
+scripts/
+docker-compose.yml
+chat-server
+.env.example
