@@ -64,7 +64,6 @@
         @apply bg-red-400;
     }
 
-    /* Connection indicator styles */
     .connection-indicator {
         @apply flex items-center gap-2 transition-all duration-200;
     }
@@ -88,7 +87,6 @@
     }
 }
 
-/* Scrollbar styling */
 ::-webkit-scrollbar {
     width: 6px;
 }

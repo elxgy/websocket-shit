@@ -22,7 +22,7 @@ type Hub struct {
 
 func newHub(db *Database) *Hub {
 	return &Hub{
-		broadcast:  make(chan []byte, 256), // Buffered channel for better performance
+		broadcast:  make(chan []byte, 256),
 		register:   make(chan *Client),
 		unregister: make(chan *Client),
 		clients:    make(map[*Client]bool),

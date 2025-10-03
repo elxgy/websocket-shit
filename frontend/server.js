@@ -4,7 +4,6 @@ const path = require("path");
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// Add request logging middleware
 app.use((req, res, next) => {
   console.log(
     `${new Date().toISOString()} - ${req.method} ${req.url} from ${req.ip}`,
@@ -12,15 +11,13 @@ app.use((req, res, next) => {
   next();
 });
 
-// Serve static files from the React app build directory
 app.use(
   express.static(path.join(__dirname, "build"), {
-    maxAge: "1d", // Cache static files for 1 day
+    maxAge: "1d",
     etag: true,
   }),
 );
 
-// Health check endpoint for Railway
 app.get("/health", (req, res) => {
   const healthData = {
     status: "ok",
@@ -33,7 +30,6 @@ app.get("/health", (req, res) => {
   res.status(200).json(healthData);
 });
 
-// Error handling middleware
 app.use((err, req, res, next) => {
   console.error("Server error:", err);
   res.status(500).json({
@@ -42,7 +38,6 @@ app.use((err, req, res, next) => {
   });
 });
 
-// Catch all handler: send back React's index.html file for client-side routing
 app.get("*", (req, res) => {
   try {
     res.sendFile(path.join(__dirname, "build", "index.html"));
@@ -52,7 +47,6 @@ app.get("*", (req, res) => {
   }
 });
 
-// Graceful shutdown handling
 process.on("SIGTERM", () => {
   console.log("SIGTERM received, shutting down gracefully");
   server.close(() => {
@@ -74,7 +68,7 @@ const server = app.listen(PORT, "0.0.0.0", (err) => {
     console.error("Failed to start server:", err);
     process.exit(1);
   }
-  console.log(`🚀 Frontend server running on port ${PORT}`);
-  console.log(`📡 Health check available at: http://localhost:${PORT}/health`);
-  console.log(`🌍 Environment: ${process.env.NODE_ENV || "development"}`);
+  console.log(`Frontend server running on port ${PORT}`);
+  console.log(`Health check available at: http://localhost:${PORT}/health`);
+  console.log(`Environment: ${process.env.NODE_ENV || "development"}`);
 });

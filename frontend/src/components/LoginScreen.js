@@ -8,7 +8,6 @@ const LoginScreen = ({ onLogin }) => {
   const [error, setError] = useState("");
   const [serverStatus, setServerStatus] = useState(null);
 
-  // Check server health on mount
   useEffect(() => {
     const checkHealth = async () => {
       try {
@@ -53,7 +52,6 @@ const LoginScreen = ({ onLogin }) => {
   return (
     <div className="min-h-screen flex items-center justify-center p-4 bg-gray-900">
       <div className="bg-gray-800 rounded-2xl shadow-2xl w-full max-w-md p-8 border border-gray-700">
-        {/* Header */}
         <div className="text-center mb-8">
           <div className="flex justify-center mb-4">
             <div className="bg-gradient-to-br from-indigo-500 to-purple-600 p-3 rounded-full">
@@ -66,7 +64,6 @@ const LoginScreen = ({ onLogin }) => {
           </p>
         </div>
 
-        {/* Server Status */}
         {serverStatus && (
           <div
             className={`mb-6 p-3 rounded-lg text-sm ${
@@ -94,7 +91,6 @@ const LoginScreen = ({ onLogin }) => {
           </div>
         )}
 
-        {/* Login Form */}
         <form onSubmit={handleSubmit} className="space-y-6">
           <div>
             <label

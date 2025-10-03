@@ -25,7 +25,6 @@ const ChatScreen = ({ username, webSocket, onLogout }) => {
     connect,
   } = webSocket;
 
-  // Auto-connect when component mounts
   useEffect(() => {
     if (connectionStatus === "idle") {
       console.log("Auto-connecting WebSocket for", username);
@@ -33,12 +32,10 @@ const ChatScreen = ({ username, webSocket, onLogout }) => {
     }
   }, [username, connectionStatus, connect]);
 
-  // Auto-scroll to bottom when new messages arrive
   useEffect(() => {
     scrollToBottom();
   }, [messages]);
 
-  // Focus input when connected
   useEffect(() => {
     if (isConnected && inputRef.current) {
       inputRef.current.focus();
@@ -134,7 +131,6 @@ const ChatScreen = ({ username, webSocket, onLogout }) => {
       const diffHours = Math.floor(diffMs / 3600000);
       const diffDays = Math.floor(diffMs / 86400000);
 
-      // Show relative time for recent messages
       if (diffMins < 1) {
         return "Just now";
       } else if (diffMins < 60) {
@@ -145,7 +141,6 @@ const ChatScreen = ({ username, webSocket, onLogout }) => {
         return `${diffDays}d ago`;
       }
 
-      // Show actual time for older messages
       return date.toLocaleTimeString([], {
         hour: "2-digit",
         minute: "2-digit",
@@ -159,7 +154,6 @@ const ChatScreen = ({ username, webSocket, onLogout }) => {
   };
 
   const renderMessage = (msg, index) => {
-    // Use msg.id as key if available, otherwise fallback to index
     const messageKey = msg.id || `msg-${index}`;
 
     if (msg.type === "message") {
@@ -193,7 +187,7 @@ const ChatScreen = ({ username, webSocket, onLogout }) => {
                 : "bg-red-900/50 text-red-300 border-red-700"
             }`}
           >
-            {isJoin ? "🟢" : "🔴"} {msg.content} • {formatTime(msg.timestamp)}
+            {msg.content} • {formatTime(msg.timestamp)}
           </div>
         </div>
       );
@@ -203,7 +197,6 @@ const ChatScreen = ({ username, webSocket, onLogout }) => {
 
   return (
     <div className="h-screen flex flex-col bg-gray-900">
-      {/* Header */}
       <div className="bg-gradient-to-r from-indigo-600 to-purple-700 text-white p-4 shadow-lg border-b border-gray-700">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
@@ -231,7 +224,6 @@ const ChatScreen = ({ username, webSocket, onLogout }) => {
         </div>
       </div>
 
-      {/* Messages Area */}
       <div className="flex-1 overflow-y-auto p-4 bg-gray-800">
         {messages.length === 0 ? (
           <div className="text-center py-12">
@@ -270,7 +262,6 @@ const ChatScreen = ({ username, webSocket, onLogout }) => {
         )}
       </div>
 
-      {/* Message Input */}
       <div className="border-t border-gray-700 bg-gray-900 p-4">
         <form onSubmit={handleSubmit} className="max-w-4xl mx-auto">
           <div className="flex gap-3">
@@ -317,7 +308,6 @@ const ChatScreen = ({ username, webSocket, onLogout }) => {
         </form>
       </div>
 
-      {/* Notification */}
       {notification && (
         <div
           className={`fixed top-4 right-4 z-50 p-3 rounded-lg shadow-lg animate-slide-in border ${
