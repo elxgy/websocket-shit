@@ -1,14 +1,37 @@
-import React, { useState, useRef, useEffect } from 'react';
-import { Send, LogOut, MessageCircle, Users, Wifi, WifiOff, RotateCcw } from 'lucide-react';
-import config from '../utils/config';
+import React, { useState, useRef, useEffect } from "react";
+import {
+  Send,
+  LogOut,
+  MessageCircle,
+  Users,
+  Wifi,
+  WifiOff,
+  RotateCcw,
+} from "lucide-react";
+import config from "../utils/config";
 
 const ChatScreen = ({ username, webSocket, onLogout }) => {
-  const [message, setMessage] = useState('');
+  const [message, setMessage] = useState("");
   const [notification, setNotification] = useState(null);
   const messagesEndRef = useRef(null);
   const inputRef = useRef(null);
 
-  const { connectionStatus, messages, userCount, sendMessage, isConnected } = webSocket;
+  const {
+    connectionStatus,
+    messages,
+    userCount,
+    sendMessage,
+    isConnected,
+    connect,
+  } = webSocket;
+
+  // Auto-connect when component mounts
+  useEffect(() => {
+    if (connectionStatus === "idle") {
+      console.log("Auto-connecting WebSocket for", username);
+      connect(username);
+    }
+  }, [username, connectionStatus, connect]);
 
   // Auto-scroll to bottom when new messages arrive
   useEffect(() => {
@@ -23,46 +46,57 @@ const ChatScreen = ({ username, webSocket, onLogout }) => {
   }, [isConnected]);
 
   const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   };
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    
+
     if (!message.trim() || !isConnected) return;
 
     if (message.length > config.MAX_MESSAGE_LENGTH) {
-      showNotification(`Message too long (max ${config.MAX_MESSAGE_LENGTH} characters)`, 'error');
+      showNotification(
+        `Message too long (max ${config.MAX_MESSAGE_LENGTH} characters)`,
+        "error",
+      );
       return;
     }
 
     try {
       sendMessage(message);
-      setMessage('');
+      setMessage("");
     } catch (error) {
-      console.error('Failed to send message:', error);
-      showNotification('Failed to send message. Please check your connection.', 'error');
+      console.error("Failed to send message:", error);
+      showNotification(
+        "Failed to send message. Please check your connection.",
+        "error",
+      );
     }
   };
 
-  const showNotification = (text, type = 'info') => {
+  const showNotification = (text, type = "info") => {
     setNotification({ text, type });
     setTimeout(() => setNotification(null), 5000);
   };
 
   const handleLogout = () => {
-    if (window.confirm('Are you sure you want to sign out?')) {
+    if (window.confirm("Are you sure you want to sign out?")) {
       onLogout();
     }
   };
 
   const getConnectionIcon = () => {
     switch (connectionStatus) {
-      case 'connected':
+      case "connected":
         return <Wifi className="w-4 h-4 text-green-400" />;
-      case 'connecting':
-      case 'reconnecting':
+      case "connecting":
+      case "reconnecting":
         return <RotateCcw className="w-4 h-4 text-yellow-400 animate-spin" />;
+      case "idle":
+        return <Wifi className="w-4 h-4 text-gray-400" />;
+      case "error":
+      case "failed":
+        return <WifiOff className="w-4 h-4 text-red-400" />;
       default:
         return <WifiOff className="w-4 h-4 text-red-400" />;
     }
@@ -70,32 +104,46 @@ const ChatScreen = ({ username, webSocket, onLogout }) => {
 
   const getConnectionText = () => {
     switch (connectionStatus) {
-      case 'connected': return 'Connected';
-      case 'connecting': return 'Connecting...';
-      case 'reconnecting': return 'Reconnecting...';
-      case 'error': return 'Connection Error';
-      default: return 'Disconnected';
+      case "connected":
+        return "Connected";
+      case "connecting":
+        return "Connecting...";
+      case "reconnecting":
+        return "Reconnecting...";
+      case "idle":
+        return "Ready to Connect";
+      case "error":
+        return "Connection Error";
+      case "failed":
+        return "Connection Failed";
+      default:
+        return "Disconnected";
     }
   };
 
   const formatTime = (timestamp) => {
-    return new Date(timestamp).toLocaleTimeString([], { 
-      hour: '2-digit', 
-      minute: '2-digit' 
+    return new Date(timestamp).toLocaleTimeString([], {
+      hour: "2-digit",
+      minute: "2-digit",
     });
   };
 
   const renderMessage = (msg, index) => {
-    if (msg.type === 'message') {
+    if (msg.type === "message") {
       const isOwn = msg.username === username;
-      
+
       return (
-        <div key={index} className={`mb-4 ${isOwn ? 'text-right' : 'text-left'}`}>
-          <div className={`inline-block max-w-xs lg:max-w-md ${isOwn ? 'ml-auto' : 'mr-auto'}`}>
-            <div className="text-xs text-gray-500 mb-1 px-1">
-              {isOwn ? 'You' : msg.username} • {formatTime(msg.timestamp)}
+        <div
+          key={index}
+          className={`mb-4 ${isOwn ? "text-right" : "text-left"}`}
+        >
+          <div
+            className={`inline-block max-w-xs lg:max-w-md ${isOwn ? "ml-auto" : "mr-auto"}`}
+          >
+            <div className="text-xs text-gray-400 mb-1 px-1">
+              {isOwn ? "You" : msg.username} • {formatTime(msg.timestamp)}
             </div>
-            <div className={`message-bubble ${isOwn ? 'own' : 'other'}`}>
+            <div className={`message-bubble ${isOwn ? "own" : "other"}`}>
               <span className="chat-message">{msg.content}</span>
             </div>
           </div>
@@ -114,9 +162,9 @@ const ChatScreen = ({ username, webSocket, onLogout }) => {
   };
 
   return (
-    <div className="h-screen flex flex-col bg-white">
+    <div className="h-screen flex flex-col bg-gray-900">
       {/* Header */}
-      <div className="bg-gradient-to-r from-indigo-500 to-purple-600 text-white p-4">
+      <div className="bg-gradient-to-r from-indigo-600 to-purple-700 text-white p-4 shadow-lg border-b border-gray-700">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
             <MessageCircle className="w-6 h-6" />
@@ -126,7 +174,7 @@ const ChatScreen = ({ username, webSocket, onLogout }) => {
               <span className="text-sm">{userCount}/4</span>
             </div>
           </div>
-          
+
           <div className="flex items-center gap-4">
             <div className="connection-indicator text-white/90">
               {getConnectionIcon()}
@@ -144,16 +192,35 @@ const ChatScreen = ({ username, webSocket, onLogout }) => {
       </div>
 
       {/* Messages Area */}
-      <div className="flex-1 overflow-y-auto p-4 bg-gray-50">
+      <div className="flex-1 overflow-y-auto p-4 bg-gray-800">
         {messages.length === 0 ? (
           <div className="text-center py-12">
-            <MessageCircle className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-            <h3 className="text-lg font-medium text-gray-900 mb-2">
+            <MessageCircle className="w-16 h-16 text-gray-500 mx-auto mb-4" />
+            <h3 className="text-lg font-medium text-white mb-2">
               Welcome to the chat room, {username}!
             </h3>
-            <p className="text-gray-500">
+            <p className="text-gray-400 mb-3">
               You can chat with up to 3 other users in real-time.
             </p>
+            {connectionStatus === "connecting" && (
+              <div className="flex items-center justify-center gap-2 text-sm text-blue-300 bg-blue-900/50 px-4 py-2 rounded-lg mx-auto w-fit border border-blue-700">
+                <RotateCcw className="w-4 h-4 animate-spin" />
+                Establishing connection...
+              </div>
+            )}
+            {connectionStatus === "connected" && (
+              <div className="flex items-center justify-center gap-2 text-sm text-green-300 bg-green-900/50 px-4 py-2 rounded-lg mx-auto w-fit border border-green-700">
+                <Wifi className="w-4 h-4" />
+                Connected! Start typing to send a message.
+              </div>
+            )}
+            {(connectionStatus === "error" ||
+              connectionStatus === "failed") && (
+              <div className="flex items-center justify-center gap-2 text-sm text-red-300 bg-red-900/50 px-4 py-2 rounded-lg mx-auto w-fit border border-red-700">
+                <WifiOff className="w-4 h-4" />
+                Connection failed. Please refresh the page.
+              </div>
+            )}
           </div>
         ) : (
           <div className="max-w-4xl mx-auto">
@@ -164,7 +231,7 @@ const ChatScreen = ({ username, webSocket, onLogout }) => {
       </div>
 
       {/* Message Input */}
-      <div className="border-t bg-white p-4">
+      <div className="border-t border-gray-700 bg-gray-900 p-4">
         <form onSubmit={handleSubmit} className="max-w-4xl mx-auto">
           <div className="flex gap-3">
             <input
@@ -172,8 +239,10 @@ const ChatScreen = ({ username, webSocket, onLogout }) => {
               type="text"
               value={message}
               onChange={(e) => setMessage(e.target.value)}
-              placeholder={isConnected ? "Type your message..." : "Connecting..."}
-              className="flex-1 px-4 py-3 border border-gray-300 rounded-full focus:ring-2 focus:ring-indigo-500 focus:border-transparent disabled:bg-gray-100 disabled:cursor-not-allowed"
+              placeholder={
+                isConnected ? "Type your message..." : "Connecting..."
+              }
+              className="flex-1 px-4 py-3 border border-gray-600 bg-gray-700 text-white rounded-full focus:ring-2 focus:ring-indigo-500 focus:border-transparent disabled:bg-gray-600 disabled:cursor-not-allowed placeholder-gray-400"
               maxLength={config.MAX_MESSAGE_LENGTH}
               disabled={!isConnected}
             />
@@ -187,12 +256,21 @@ const ChatScreen = ({ username, webSocket, onLogout }) => {
             </button>
           </div>
           <div className="flex justify-between mt-2 px-1">
-            <span className="text-xs text-gray-500">
+            <span className="text-xs text-gray-400">
               {message.length}/{config.MAX_MESSAGE_LENGTH}
             </span>
-            {!isConnected && (
-              <span className="text-xs text-red-500">
-                Reconnecting...
+            {connectionStatus === "connecting" && (
+              <span className="text-xs text-blue-400">
+                Connecting to server...
+              </span>
+            )}
+            {connectionStatus === "reconnecting" && (
+              <span className="text-xs text-yellow-400">Reconnecting...</span>
+            )}
+            {(connectionStatus === "error" ||
+              connectionStatus === "failed") && (
+              <span className="text-xs text-red-400">
+                Connection issue - check network
               </span>
             )}
           </div>
@@ -201,11 +279,13 @@ const ChatScreen = ({ username, webSocket, onLogout }) => {
 
       {/* Notification */}
       {notification && (
-        <div className={`fixed top-4 right-4 z-50 p-3 rounded-lg shadow-lg animate-slide-in ${
-          notification.type === 'error' 
-            ? 'bg-red-500 text-white' 
-            : 'bg-blue-500 text-white'
-        }`}>
+        <div
+          className={`fixed top-4 right-4 z-50 p-3 rounded-lg shadow-lg animate-slide-in border ${
+            notification.type === "error"
+              ? "bg-red-900 text-red-100 border-red-700"
+              : "bg-blue-900 text-blue-100 border-blue-700"
+          }`}
+        >
           {notification.text}
         </div>
       )}

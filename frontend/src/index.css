@@ -3,64 +3,106 @@
 @tailwind utilities;
 
 @layer base {
-  html {
-    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
-  }
-  
-  body {
-    @apply bg-gradient-to-br from-indigo-500 via-purple-500 to-pink-500 min-h-screen;
-  }
+    html {
+        font-family:
+            -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen,
+            Ubuntu, Cantarell, sans-serif;
+    }
+
+    body {
+        @apply bg-gray-900 min-h-screen;
+    }
 }
 
 @layer components {
-  .chat-message {
-    @apply break-words max-w-full;
-  }
-  
-  .message-bubble {
-    @apply inline-block max-w-full px-4 py-2 rounded-2xl;
-  }
-  
-  .message-bubble.own {
-    @apply bg-gradient-to-r from-indigo-500 to-purple-600 text-white rounded-br-md;
-  }
-  
-  .message-bubble.other {
-    @apply bg-white text-gray-800 rounded-bl-md shadow-sm;
-  }
-  
-  .connection-indicator {
-    @apply flex items-center gap-2 text-sm;
-  }
-  
-  .connection-dot {
-    @apply w-2 h-2 rounded-full;
-  }
-  
-  .connection-dot.connected {
-    @apply bg-green-400 animate-pulse-dot;
-  }
-  
-  .connection-dot.disconnected {
-    @apply bg-red-400;
-  }
+    .chat-message {
+        @apply break-words max-w-full;
+    }
+
+    .message-bubble {
+        @apply inline-block max-w-full px-4 py-2 rounded-2xl;
+    }
+
+    .message-bubble.own {
+        @apply bg-gradient-to-r from-indigo-500 to-purple-600 text-white rounded-br-md;
+    }
+
+    .message-bubble.other {
+        @apply bg-gray-700 text-gray-100 rounded-bl-md shadow-sm border border-gray-600;
+    }
+
+    .connection-indicator {
+        @apply flex items-center gap-2 text-sm;
+    }
+
+    .connection-dot {
+        @apply w-2 h-2 rounded-full;
+    }
+
+    .connection-dot.connected {
+        @apply bg-green-400 animate-pulse-dot;
+    }
+
+    .connection-dot.connecting {
+        @apply bg-yellow-400 animate-pulse;
+    }
+
+    .connection-dot.reconnecting {
+        @apply bg-orange-400 animate-pulse;
+    }
+
+    .connection-dot.idle {
+        @apply bg-gray-400;
+    }
+
+    .connection-dot.error,
+    .connection-dot.failed {
+        @apply bg-red-400;
+    }
+
+    .connection-dot.disconnected {
+        @apply bg-red-400;
+    }
+
+    /* Connection indicator styles */
+    .connection-indicator {
+        @apply flex items-center gap-2 transition-all duration-200;
+    }
+
+    .connection-indicator.connected {
+        @apply text-green-400;
+    }
+
+    .connection-indicator.connecting,
+    .connection-indicator.reconnecting {
+        @apply text-yellow-400;
+    }
+
+    .connection-indicator.idle {
+        @apply text-gray-400;
+    }
+
+    .connection-indicator.error,
+    .connection-indicator.failed {
+        @apply text-red-400;
+    }
 }
 
 /* Scrollbar styling */
 ::-webkit-scrollbar {
-  width: 6px;
+    width: 6px;
 }
 
 ::-webkit-scrollbar-track {
-  background: #f1f5f9;
-  border-radius: 3px;
+    background: #374151;
+    border-radius: 3px;
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #cbd5e1;
-  border-radius: 3px;
+    background: #6b7280;
+    border-radius: 3px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #94a3b8;
+    background: #9ca3af;
 }

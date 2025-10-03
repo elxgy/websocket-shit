@@ -2,7 +2,7 @@ import { useState, useCallback, useRef, useEffect } from "react";
 import config from "../utils/config";
 
 export const useWebSocket = () => {
-  const [connectionStatus, setConnectionStatus] = useState("disconnected");
+  const [connectionStatus, setConnectionStatus] = useState("idle");
   const [messages, setMessages] = useState([]);
   const [userCount, setUserCount] = useState(0);
 
@@ -203,7 +203,7 @@ export const useWebSocket = () => {
       wsRef.current = null;
     }
     usernameRef.current = null;
-    setConnectionStatus("disconnected");
+    setConnectionStatus("idle");
     setMessages([]);
     setUserCount(0);
   }, []);

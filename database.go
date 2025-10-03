@@ -128,9 +128,9 @@ func (d *Database) CreateDefaultUsers() error {
 		password string
 	}{
 		{"yuri", "yuricbtt"},
-		{"bernardo", "yuricbtt"},
-		{"pedro", "yuricbtt"},
-		{"marcelo", "yuricbtt"},
+		{"bernardo", "bernardocbtt"},
+		{"pedro", "pedrocbtt"},
+		{"marcelo", "marcelocbtt"},
 		{"giggio", "giggio123"},
 		{"ramos", "ramosgay"},
 		{"markin", "markinviado"},

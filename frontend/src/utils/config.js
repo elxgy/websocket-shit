@@ -16,16 +16,6 @@ const config = {
 
   MAX_MESSAGE_LENGTH: 500,
   MESSAGE_HISTORY_LIMIT: 100,
-
-  TEST_USERS: [
-    { username: "yuri", password: "yuricbtt" },
-    { username: "bernardo", password: "yuricbtt" },
-    { username: "pedro", password: "yuricbtt" },
-    { username: "marcelo", password: "yuricbtt" },
-    { username: "giggio", password: "giggio123" },
-    { username: "ramos", password: "ramosgay" },
-    { username: "markin", password: "markinviado" },
-  ],
 };
 
 export default config;
