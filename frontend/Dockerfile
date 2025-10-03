@@ -32,7 +32,7 @@ RUN echo '#!/bin/sh' > /docker-entrypoint.sh && \
     chmod +x /docker-entrypoint.sh
 
 # Expose port (Railway will override this)
-EXPOSE 80
+EXPOSE $PORT
 
 # Start with our custom script
 CMD ["/docker-entrypoint.sh"]
