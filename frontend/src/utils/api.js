@@ -1,4 +1,4 @@
-import config from './config.js';
+import config from "./config.js";
 
 class API {
   constructor() {
@@ -7,10 +7,10 @@ class API {
 
   async request(endpoint, options = {}) {
     const url = `${this.baseURL}${endpoint}`;
-    
+
     const defaultOptions = {
       headers: {
-        'Content-Type': 'application/json',
+        "Content-Type": "application/json",
       },
     };
 
@@ -24,15 +24,17 @@ class API {
     };
 
     try {
-      console.log(`API Request: ${options.method || 'GET'} ${url}`);
-      
+      console.log(`API Request: ${options.method || "GET"} ${url}`);
+
       const response = await fetch(url, requestOptions);
       const data = await response.json();
 
       console.log(`API Response: ${response.status}`, data);
 
       if (!response.ok) {
-        throw new Error(data.message || `HTTP ${response.status}: ${response.statusText}`);
+        throw new Error(
+          data.message || `HTTP ${response.status}: ${response.statusText}`,
+        );
       }
 
       return data;
@@ -43,15 +45,16 @@ class API {
   }
 
   async login(username, password) {
-    return this.request('/login', {
-      method: 'POST',
+    return this.request("/login", {
+      method: "POST",
       body: JSON.stringify({ username, password }),
     });
   }
 
   async healthCheck() {
-    return this.request('/health');
+    return this.request("/health");
   }
 }
 
-export default new API();
+const api = new API();
+export default api;

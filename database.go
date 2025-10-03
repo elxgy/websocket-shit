@@ -101,7 +101,7 @@ func (d *Database) GetRecentMessages() ([]Message, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
-	opts := options.Find().SetSort(bson.D{{"timestamp", -1}}).SetLimit(50)
+	opts := options.Find().SetSort(bson.D{{Key: "timestamp", Value: -1}}).SetLimit(50)
 	cursor, err := d.messages.Find(ctx, bson.M{}, opts)
 	if err != nil {
 		return nil, err
