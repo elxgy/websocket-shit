@@ -134,29 +134,33 @@ func corsMiddleware(next http.Handler) http.Handler {
 }
 
 func main() {
-	// Load environment variables
+	// Load environment variables (optional for local development)
 	if err := godotenv.Load(); err != nil {
-		log.Printf("Warning: .env file not found: %v", err)
+		log.Printf("Info: No .env file found (this is normal for Railway deployment)")
 	}
 
 	// Get MongoDB URI
 	mongoURI := os.Getenv("MONGODB_URI")
 	if mongoURI == "" {
-		log.Fatal("MONGODB_URI environment variable is required")
+		log.Fatal("❌ MONGODB_URI environment variable is required")
 	}
+
+	log.Printf("🔗 Connecting to MongoDB...")
 
 	// Connect to database
 	db, err := NewDatabase(mongoURI)
 	if err != nil {
-		log.Fatalf("Failed to connect to database: %v", err)
+		log.Fatalf("❌ Failed to connect to database: %v", err)
 	}
 	defer db.Close()
 
-	log.Println("Connected to MongoDB successfully")
+	log.Println("✅ Connected to MongoDB successfully")
 
 	// Create default users
 	if err := db.CreateDefaultUsers(); err != nil {
-		log.Printf("Error creating default users: %v", err)
+		log.Printf("⚠️ Warning: Error creating default users: %v", err)
+	} else {
+		log.Println("👥 Default users ready")
 	}
 
 	// Create server
@@ -179,12 +183,12 @@ func main() {
 		port = "8080"
 	}
 
-	log.Printf("Chat server starting on port %s", port)
-	log.Printf("WebSocket endpoint: /ws")
-	log.Printf("Login endpoint: /login")
-	log.Printf("Health check: /health")
+	log.Printf("🚀 Chat server starting on port %s", port)
+	log.Printf("📡 WebSocket endpoint: /ws")
+	log.Printf("🔐 Login endpoint: /login")
+	log.Printf("💚 Health check: /health")
 
-	if err := http.ListenAndServe(":"+port, r); err != nil {
-		log.Fatalf("Server failed to start: %v", err)
+	if err := http.ListenAndServe("0.0.0.0:"+port, r); err != nil {
+		log.Fatalf("❌ Server failed to start: %v", err)
 	}
 }

@@ -1,47 +1,31 @@
-# Stage 1: Build the application
+# Build stage
 FROM golang:1.21-alpine AS builder
 
-# Set the working directory inside the container
 WORKDIR /app
 
-# Copy go.mod and go.sum files to download dependencies
+# Copy go mod files
 COPY go.mod go.sum ./
-
-# Download dependencies
 RUN go mod download
 
-# Copy the rest of the application source code
+# Copy source code
 COPY . .
 
-# Compile the application.
-# CGO_ENABLED=0 is important for creating a static binary.
-# GOOS=linux ensures we build for a Linux environment.
-RUN CGO_ENABLED=0 GOOS=linux go build -o /chat-server .
+# Build the application
+RUN CGO_ENABLED=0 GOOS=linux go build -o main .
 
-# ---
-
-# Stage 2: Create the final, minimal image
+# Runtime stage
 FROM alpine:latest
 
-# Add ca-certificates for HTTPS requests
+# Add ca-certificates for HTTPS
 RUN apk --no-cache add ca-certificates
-
-# Create a non-root user
-RUN addgroup -S appgroup && adduser -S appuser -G appgroup
 
 WORKDIR /root/
 
-# Copy the compiled binary from the 'builder' stage
-COPY --from=builder /chat-server ./
+# Copy the binary from builder stage
+COPY --from=builder /app/main .
 
-# Change ownership to non-root user
-RUN chown appuser:appgroup /root/chat-server
+# Expose port
+EXPOSE $PORT
 
-# Switch to non-root user
-USER appuser
-
-# Tell Docker that the container listens on port 8080
-EXPOSE 8080
-
-# The command to run when the container starts
-ENTRYPOINT ["./chat-server"]
+# Run the binary
+CMD ["./main"]
