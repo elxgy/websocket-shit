@@ -83,11 +83,12 @@ func (d *Database) AuthenticateUser(username, password string) (*User, error) {
 	return &user, nil
 }
 
-func (d *Database) SaveMessage(username, content string) error {
+func (d *Database) SaveMessage(username, content string, timestamp time.Time, messageType string) error {
 	message := Message{
 		Username:  username,
 		Content:   content,
-		Timestamp: time.Now(),
+		Timestamp: timestamp,
+		Type:      messageType,
 	}
 
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
@@ -101,8 +102,10 @@ func (d *Database) GetRecentMessages() ([]Message, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
+	// Only get actual chat messages, not join/leave events
+	filter := bson.M{"type": bson.M{"$in": []string{"message", ""}}}
 	opts := options.Find().SetSort(bson.D{{Key: "timestamp", Value: -1}}).SetLimit(50)
-	cursor, err := d.messages.Find(ctx, bson.M{}, opts)
+	cursor, err := d.messages.Find(ctx, filter, opts)
 	if err != nil {
 		return nil, err
 	}
@@ -114,6 +117,7 @@ func (d *Database) GetRecentMessages() ([]Message, error) {
 		return nil, err
 	}
 
+	// Reverse to get chronological order (oldest first)
 	for i := len(messages)/2 - 1; i >= 0; i-- {
 		opp := len(messages) - 1 - i
 		messages[i], messages[opp] = messages[opp], messages[i]

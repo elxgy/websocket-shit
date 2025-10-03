@@ -17,6 +17,7 @@ type Message struct {
 	Username  string             `bson:"username" json:"username"`
 	Content   string             `bson:"content" json:"content"`
 	Timestamp time.Time          `bson:"timestamp" json:"timestamp"`
+	Type      string             `bson:"type" json:"type"`
 }
 
 type LoginRequest struct {
@@ -31,6 +32,7 @@ type LoginResponse struct {
 }
 
 type ChatMessage struct {
+	ID        string    `json:"id"`
 	Type      string    `json:"type"`
 	Username  string    `json:"username"`
 	Content   string    `json:"content"`

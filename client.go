@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/gorilla/websocket"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
 type Client struct {
@@ -45,17 +46,36 @@ func (c *Client) read() {
 			continue
 		}
 
+		// Validate message content
+		if len(chatMessage.Content) == 0 {
+			log.Printf("Empty message content from %s, ignoring", c.username)
+			continue
+		}
+
+		if len(chatMessage.Content) > 500 {
+			log.Printf("Message too long from %s (%d chars), truncating", c.username, len(chatMessage.Content))
+			chatMessage.Content = chatMessage.Content[:500]
+		}
+
+		// Generate unique message ID and set server timestamp
+		messageID := primitive.NewObjectID()
+		serverTime := time.Now().UTC()
+
+		chatMessage.ID = messageID.Hex()
 		chatMessage.Username = c.username
-		chatMessage.Timestamp = time.Now()
+		chatMessage.Timestamp = serverTime
+		chatMessage.Type = "message"
 
-		log.Printf("Message received from %s: %s", c.username, chatMessage.Content)
+		log.Printf("Message received from %s (ID: %s): %s", c.username, chatMessage.ID, chatMessage.Content)
 
+		// Save to database with consistent timestamp and type
 		if c.hub.db != nil {
-			err = c.hub.db.SaveMessage(chatMessage.Username, chatMessage.Content)
+			err = c.hub.db.SaveMessage(chatMessage.Username, chatMessage.Content, chatMessage.Timestamp, chatMessage.Type)
 			if err != nil {
 				log.Printf("Error saving message to database from %s: %v", c.username, err)
+				// Continue even if DB save fails - don't block real-time chat
 			} else {
-				log.Printf("Message saved to database from %s", c.username)
+				log.Printf("Message saved to database from %s (ID: %s)", c.username, chatMessage.ID)
 			}
 		}
 
@@ -65,7 +85,13 @@ func (c *Client) read() {
 			continue
 		}
 
-		c.hub.broadcast <- messageBytes
+		// Broadcast to all connected clients
+		select {
+		case c.hub.broadcast <- messageBytes:
+			log.Printf("Message broadcasted from %s (ID: %s)", c.username, chatMessage.ID)
+		default:
+			log.Printf("Warning: Broadcast channel full, message from %s may be dropped", c.username)
+		}
 	}
 }
 

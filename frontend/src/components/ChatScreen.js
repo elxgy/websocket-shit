@@ -122,19 +122,52 @@ const ChatScreen = ({ username, webSocket, onLogout }) => {
   };
 
   const formatTime = (timestamp) => {
-    return new Date(timestamp).toLocaleTimeString([], {
-      hour: "2-digit",
-      minute: "2-digit",
-    });
+    try {
+      const date = new Date(timestamp);
+      if (isNaN(date.getTime())) {
+        return "Invalid time";
+      }
+
+      const now = new Date();
+      const diffMs = now - date;
+      const diffMins = Math.floor(diffMs / 60000);
+      const diffHours = Math.floor(diffMs / 3600000);
+      const diffDays = Math.floor(diffMs / 86400000);
+
+      // Show relative time for recent messages
+      if (diffMins < 1) {
+        return "Just now";
+      } else if (diffMins < 60) {
+        return `${diffMins}m ago`;
+      } else if (diffHours < 24) {
+        return `${diffHours}h ago`;
+      } else if (diffDays < 7) {
+        return `${diffDays}d ago`;
+      }
+
+      // Show actual time for older messages
+      return date.toLocaleTimeString([], {
+        hour: "2-digit",
+        minute: "2-digit",
+        month: "short",
+        day: "numeric",
+      });
+    } catch (error) {
+      console.error("Error formatting timestamp:", error);
+      return "Invalid time";
+    }
   };
 
   const renderMessage = (msg, index) => {
+    // Use msg.id as key if available, otherwise fallback to index
+    const messageKey = msg.id || `msg-${index}`;
+
     if (msg.type === "message") {
       const isOwn = msg.username === username;
 
       return (
         <div
-          key={index}
+          key={messageKey}
           className={`mb-4 ${isOwn ? "text-right" : "text-left"}`}
         >
           <div
@@ -149,16 +182,23 @@ const ChatScreen = ({ username, webSocket, onLogout }) => {
           </div>
         </div>
       );
-    } else {
-      // System message
+    } else if (msg.type === "user_joined" || msg.type === "user_left") {
+      const isJoin = msg.type === "user_joined";
       return (
-        <div key={index} className="mb-3 text-center">
-          <div className="inline-block bg-gray-100 text-gray-600 text-sm px-3 py-1 rounded-full">
-            {msg.content} • {formatTime(msg.timestamp)}
+        <div key={messageKey} className="text-center mb-3">
+          <div
+            className={`inline-block text-sm px-3 py-1 rounded-full border ${
+              isJoin
+                ? "bg-green-900/50 text-green-300 border-green-700"
+                : "bg-red-900/50 text-red-300 border-red-700"
+            }`}
+          >
+            {isJoin ? "🟢" : "🔴"} {msg.content} • {formatTime(msg.timestamp)}
           </div>
         </div>
       );
     }
+    return null;
   };
 
   return (
@@ -224,7 +264,7 @@ const ChatScreen = ({ username, webSocket, onLogout }) => {
           </div>
         ) : (
           <div className="max-w-4xl mx-auto">
-            {messages.map(renderMessage)}
+            {messages.map((message, index) => renderMessage(message, index))}
             <div ref={messagesEndRef} />
           </div>
         )}

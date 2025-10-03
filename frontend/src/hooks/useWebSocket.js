@@ -10,6 +10,7 @@ export const useWebSocket = () => {
   const reconnectAttemptsRef = useRef(0);
   const usernameRef = useRef(null);
   const reconnectTimeoutRef = useRef(null);
+  const messageIdsRef = useRef(new Set());
 
   const attemptReconnect = useCallback(() => {
     if (reconnectAttemptsRef.current >= config.RECONNECT_ATTEMPTS) {
@@ -44,8 +45,35 @@ export const useWebSocket = () => {
               const message = JSON.parse(event.data);
               console.log("WebSocket message received:", message);
 
+              // Ensure message has proper timestamp and ID
+              if (!message.timestamp) {
+                message.timestamp = new Date().toISOString();
+              }
+              if (!message.id) {
+                message.id = Date.now() + Math.random();
+              }
+
+              // Prevent duplicate messages
+              if (messageIdsRef.current.has(message.id)) {
+                return;
+              }
+              messageIdsRef.current.add(message.id);
+
+              // Parse timestamp to ensure consistency
+              const parsedMessage = {
+                ...message,
+                timestamp: new Date(message.timestamp),
+              };
+
               setMessages((prev) => {
-                const newMessages = [...prev, message];
+                // Check if message already exists in current messages
+                if (prev.some((msg) => msg.id === parsedMessage.id)) {
+                  return prev;
+                }
+
+                const newMessages = [...prev, parsedMessage].sort(
+                  (a, b) => new Date(a.timestamp) - new Date(b.timestamp),
+                );
                 return newMessages.slice(-config.MESSAGE_HISTORY_LIMIT);
               });
 
@@ -128,8 +156,35 @@ export const useWebSocket = () => {
             const message = JSON.parse(event.data);
             console.log("WebSocket message received:", message);
 
+            // Ensure message has proper timestamp and ID
+            if (!message.timestamp) {
+              message.timestamp = new Date().toISOString();
+            }
+            if (!message.id) {
+              message.id = Date.now() + Math.random();
+            }
+
+            // Prevent duplicate messages
+            if (messageIdsRef.current.has(message.id)) {
+              return;
+            }
+            messageIdsRef.current.add(message.id);
+
+            // Parse timestamp to ensure consistency
+            const parsedMessage = {
+              ...message,
+              timestamp: new Date(message.timestamp),
+            };
+
             setMessages((prev) => {
-              const newMessages = [...prev, message];
+              // Check if message already exists in current messages
+              if (prev.some((msg) => msg.id === parsedMessage.id)) {
+                return prev;
+              }
+
+              const newMessages = [...prev, parsedMessage].sort(
+                (a, b) => new Date(a.timestamp) - new Date(b.timestamp),
+              );
               return newMessages.slice(-config.MESSAGE_HISTORY_LIMIT);
             });
 
@@ -189,6 +244,7 @@ export const useWebSocket = () => {
     const message = {
       type: "message",
       content: content.trim(),
+      clientTimestamp: new Date().toISOString(),
     };
 
     console.log("Sending message:", message);
@@ -206,7 +262,25 @@ export const useWebSocket = () => {
     setConnectionStatus("idle");
     setMessages([]);
     setUserCount(0);
+    messageIdsRef.current.clear();
   }, []);
+
+  // Cleanup old message IDs to prevent memory leaks
+  const cleanupMessageIds = useCallback(() => {
+    if (messageIdsRef.current.size > config.MESSAGE_HISTORY_LIMIT * 2) {
+      // Keep only recent message IDs
+      const currentMessages = messages.slice(-config.MESSAGE_HISTORY_LIMIT);
+      const currentIds = new Set(
+        currentMessages.map((msg) => msg.id).filter(Boolean),
+      );
+      messageIdsRef.current = currentIds;
+    }
+  }, [messages]);
+
+  // Run cleanup periodically
+  useEffect(() => {
+    cleanupMessageIds();
+  }, [messages, cleanupMessageIds]);
 
   useEffect(() => {
     return () => {
